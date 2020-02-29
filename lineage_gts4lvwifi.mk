@@ -35,7 +35,4 @@ PRODUCT_GMS_CLIENTID_BASE := android-samsung
 
 # Use the latest approved GMS identifiers
 PRODUCT_BUILD_PROP_OVERRIDES += \
-    PRODUCT_NAME=gts4lvwifixx \
-    PRIVATE_BUILD_DESC="gts4lvwifixx-user 9 PPR1.180610.011 T720XXU1ASF1 release-keys"
-
-BUILD_FINGERPRINT := "samsung/gts4lvwifixx/gts4lvwifi:9/PPR1.180610.011/T720XXU1ASF1:user/release-keys"
+    PRODUCT_NAME=gts4lvwifixx
