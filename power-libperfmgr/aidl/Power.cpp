@@ -15,7 +15,7 @@
  */
 
 #define ATRACE_TAG (ATRACE_TAG_POWER | ATRACE_TAG_HAL)
-#define LOG_TAG "android.hardware.power-service.sdm710-libperfmgr"
+#define LOG_TAG "android.hardware.power-service.sm6150-libperfmgr"
 
 #include "Power.h"
 
@@ -30,6 +30,11 @@
 #include <utils/Log.h>
 #include <utils/Trace.h>
 
+#include <linux/input.h>
+
+constexpr int kWakeupModeOff = 4;
+constexpr int kWakeupModeOn = 5;
+
 namespace aidl {
 namespace google {
 namespace hardware {
@@ -41,9 +46,8 @@ constexpr char kPowerHalStateProp[] = "vendor.powerhal.state";
 constexpr char kPowerHalAudioProp[] = "vendor.powerhal.audio";
 constexpr char kPowerHalRenderingProp[] = "vendor.powerhal.rendering";
 
-Power::Power(std::shared_ptr<HintManager> hm, std::shared_ptr<DisplayLowPower> dlpw)
+Power::Power(std::shared_ptr<HintManager> hm)
     : mHintManager(hm),
-      mDisplayLowPower(dlpw),
       mInteractionHandler(nullptr),
       mSustainedPerfModeOn(false) {
     mInteractionHandler = std::make_unique<InteractionHandler>(mHintManager);
@@ -74,17 +78,58 @@ Power::Power(std::shared_ptr<HintManager> hm, std::shared_ptr<DisplayLowPower> d
     ALOGI("PowerHAL ready to process hints");
 }
 
+int open_ts_input() {
+    int fd = -1;
+    DIR *dir = opendir("/dev/input");
+
+    if (dir != NULL) {
+        struct dirent *ent;
+
+        while ((ent = readdir(dir)) != NULL) {
+            if (ent->d_type == DT_CHR) {
+                char absolute_path[PATH_MAX] = {0};
+                char name[80] = {0};
+
+                strcpy(absolute_path, "/dev/input/");
+                strcat(absolute_path, ent->d_name);
+
+                fd = open(absolute_path, O_RDWR);
+                if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), &name) > 0) {
+                    if (strcmp(name, "fts_ts") == 0 || strcmp(name, "goodix_ts") == 0 ||
+                            strcmp(name, "NVTCapacitiveTouchScreen") == 0)
+                        break;
+                }
+
+                close(fd);
+                fd = -1;
+            }
+        }
+
+        closedir(dir);
+    }
+
+    return fd;
+}
+
 ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
     LOG(DEBUG) << "Power setMode: " << toString(type) << " to: " << enabled;
     ATRACE_INT(toString(type).c_str(), enabled);
     switch (type) {
          case Mode::DOUBLE_TAP_TO_WAKE:
-            if (enabled) {
-                mHintManager->DoHint(toString(type));
-            } else {
-                mHintManager->EndHint(toString(type));
+            {
+            int fd = open_ts_input();
+            if (fd == -1) {
+                ALOGW("DT2W won't work because no supported touchscreen input devices were found");
+                return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
             }
-            break;
+            struct input_event ev;
+            ev.type = EV_SYN;
+            ev.code = SYN_CONFIG;
+            ev.value = enabled ? kWakeupModeOn : kWakeupModeOff;
+            write(fd, &ev, sizeof(ev));
+            close(fd);
+            [[fallthrough]];
+            }
         case Mode::LOW_POWER:
             break;
         case Mode::SUSTAINED_PERFORMANCE:
