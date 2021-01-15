@@ -38,4 +38,4 @@ PRODUCT_BUILD_PROP_OVERRIDES += \
     PRODUCT_NAME=gts4lvwifixx \
     PRIVATE_BUILD_DESC="gts4lvwifixx-user 10 QP1A.190711.020 T720XXU1BTF7 release-keys"
 
-BUILD_FINGERPRINT := "samsung/gts4lvwifixx/gts4lvwifi:10/QP1A.190711.020/T720XXU1BTF7:user/release-keys"
+BUILD_FINGERPRINT := "google/redfin/redfin:11/RQ1A.210105.003/7005429:user/release-keys"
