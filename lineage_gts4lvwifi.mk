@@ -41,4 +41,4 @@ PRODUCT_BUILD_PROP_OVERRIDES += \
     PRODUCT_NAME=gts4lvwifixx \
     PRIVATE_BUILD_DESC="gts4lvwifixx-user 10 QP1A.190711.020 T720XXS2CUA3 release-keys"
 
-BUILD_FINGERPRINT := "google/redfin/redfin:11/RQ2A.210305.006/7119741:user/release-keys"
+BUILD_FINGERPRINT := "google/redfin/redfin:11/RQ2A.210405.005/7181113:user/release-keys"
